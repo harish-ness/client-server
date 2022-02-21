@@ -15,10 +15,8 @@ in client and display result sent back from the server.
 	• cd <directory> : enter the directory
 	• bye: close the connection session
 
-# Compilation
-For Server side:	gcc tcp_server.c -o server -lbsd -lpthread
-
-For Client side:	gcc tcp_client.c -o client -lbsd
+# Compilation 
+	make
 
 # Run
 For Server side:	./server
