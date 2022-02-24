@@ -1,4 +1,5 @@
 // C program for the Client Side
+
 #include "client_server.h"
 
 int main()
@@ -6,12 +7,12 @@ int main()
   char *buffer;
   int socketfd, response;
   struct sockaddr_in address;
-  
+
   // Creating socket file descriptor	socketfd = socket(domain, type, IP)
   if ((socketfd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
   {
     perror("Socket creation failed \n");
-    exit(EXIT_FAILURE);
+    return -1;
   }
   memset(&address, '\0', sizeof(address));
   address.sin_family = AF_INET;
@@ -39,6 +40,11 @@ int main()
     if( strcmp(buffer, "cd") == 0)
     {
       char *temp = (char *)malloc(SIZE);
+      if(temp == NULL)
+      {
+        perror("Unable to allocate a memory.\n");
+        break;
+      }
       printf(" Enter Directory path: ");
       scanf("%s", &temp[0]);
       strlcat(buffer, " ", SIZE);

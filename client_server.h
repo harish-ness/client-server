@@ -5,6 +5,7 @@
 #include<string.h>
 #include<unistd.h>
 #include<dirent.h>
+#include<pthread.h>
 #include<sys/stat.h>
 #include<arpa/inet.h>
 #include<sys/types.h>

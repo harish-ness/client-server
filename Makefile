@@ -8,8 +8,8 @@ CC = gcc
 CFLAGS = -Wall -Wextra -Werror -g
 
 # Compile
-server: tcp_server.c
-	$(CC) $(CFLAGS) tcp_server.c -o server -lbsd
+client_server: tcp_server.c
+	$(CC) $(CFLAGS) tcp_server.c -o server -lbsd -lpthread
 	$(CC) $(CFLAGS) tcp_client.c -o client -lbsd
 
 # Remove unwanted files
