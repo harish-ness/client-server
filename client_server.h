@@ -1,10 +1,12 @@
 // Client-Server TCP Socket C Program
 #include<time.h>
 #include<stdio.h>
+#include<netdb.h>
 #include<stdlib.h>
 #include<string.h>
 #include<unistd.h>
 #include<dirent.h>
+#include<limits.h>
 #include<pthread.h>
 #include<sys/stat.h>
 #include<arpa/inet.h>
