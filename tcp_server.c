@@ -28,6 +28,28 @@ char *get_file_type(unsigned char n)
   return 0;
 }
 
+void show_dir_content(char *path, char *buffer)
+{
+  struct stat filestat;
+  struct dirent *directory_entry;
+  DIR *dirptr = opendir(path);
+  if(dirptr == NULL)
+  {
+    strlcpy(buffer, "Unable to open current directory", SIZE);
+    return;
+  }
+  while ((directory_entry = readdir(dirptr)) != NULL)
+  {
+    strlcat(buffer, get_file_type(directory_entry->d_type), SIZE);
+    strlcat(buffer, "\t", SIZE);
+    strlcat(buffer, directory_entry->d_name, SIZE);
+    strlcat(buffer, "\t", SIZE);
+    strlcat(buffer, ctime(&filestat.st_ctime), SIZE);
+    strlcat(buffer, "\n", SIZE);
+  }
+  closedir(dirptr);
+}
+
 void *myfunction(void *p_client_socket)
 {
   NODE *ptr = (NODE *)p_client_socket;
@@ -56,40 +78,18 @@ void *myfunction(void *p_client_socket)
     else if( strcmp(buffer, "pwd") == 0)
     {
       bzero(buffer, SIZE);
-      strlcpy(buffer, (char *)ptr->client_path, SIZE);
+      strlcpy(buffer, ptr->client_path, SIZE);
     }
     else if( strcmp(buffer, "ls") == 0)
     {
-      struct stat filestat;
-      struct dirent *director_entry;
       bzero(buffer, SIZE);
-      DIR *dirptr = opendir(".");
-      if (dirptr == NULL)
-      {
-        strlcpy(buffer, "Unable to open current directory", SIZE);
-      }
-      else
-      for(int i=0; (director_entry = readdir(dirptr)) != NULL; i++)
-      {
-        if(stat(director_entry->d_name, &filestat) != 0)
-        {
-          strlcpy(buffer, "Unable to open current directory", SIZE);
-          break;
-        }
-        strlcat(buffer, get_file_type(director_entry->d_type), SIZE);
-        strlcat(buffer, "\t", SIZE);
-        strlcat(buffer, director_entry->d_name, SIZE);
-        strlcat(buffer, "\t", SIZE);
-        strlcat(buffer, ctime(&filestat.st_ctime), SIZE);
-        strlcat(buffer, "\n", SIZE);
-      }
-      closedir(dirptr);
+      show_dir_content(ptr->client_path, buffer);
     }
     else if( strncmp(buffer, "cd", 2) == 0)
     {
-      bzero(buffer, SIZE);
       bzero(ptr->client_path, SIZE);
       strlcpy(ptr->client_path, buffer+3, SIZE);
+      bzero(buffer, SIZE);
       strlcpy(buffer, "Directory changed successfully", SIZE);
     }
     else
