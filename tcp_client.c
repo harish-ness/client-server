@@ -35,7 +35,7 @@ int main()
   }
   while(1)
   {
-    printf("\n Enter your choice: ");
+    printf("\n Enter your choice: ");		// cd /home/harish	1000
     scanf("%s", &buffer[0]);
     if( strcmp(buffer, "cd") == 0)
     {
