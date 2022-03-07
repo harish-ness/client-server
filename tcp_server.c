@@ -45,7 +45,7 @@ void show_dir_content(char *path, char *buffer)
     strlcat(buffer, directory_entry->d_name, SIZE);
     strlcat(buffer, "\t", SIZE);
     strlcat(buffer, ctime(&filestat.st_ctime), SIZE);
-    strlcat(buffer, "\n", SIZE);
+//    strlcat(buffer, "\n", SIZE);
   }
   closedir(dirptr);
 }
@@ -170,7 +170,7 @@ int main()
     exit(EXIT_FAILURE);
   }
   // Wait for the client for connection
-  if (listen(socketfd, 10) < 0)
+  if (listen(socketfd, 100) < 0)
   {
     perror("Unable to listen\n");
     close(socketfd);
