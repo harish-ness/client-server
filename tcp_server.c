@@ -6,7 +6,7 @@ typedef struct client
 {
   int new_socketfd;
   struct sockaddr_in client_address;
-  char *client_path;
+  char client_path[SIZE];
 }NODE;
 
 char *get_file_type(unsigned char n)
@@ -28,26 +28,29 @@ char *get_file_type(unsigned char n)
   return 0;
 }
 
-void show_dir_content(char *path, char *buffer)
+int show_dir_content(char *path, char *buffer)
 {
-  struct stat filestat;
   struct dirent *directory_entry;
   DIR *dirptr = opendir(path);
   if(dirptr == NULL)
   {
     strlcpy(buffer, "Unable to open current directory", SIZE);
-    return;
+    return 1;
   }
   while ((directory_entry = readdir(dirptr)) != NULL)
   {
+    struct stat filestat;
+    stat(directory_entry->d_name, &filestat);
     strlcat(buffer, get_file_type(directory_entry->d_type), SIZE);
     strlcat(buffer, "\t", SIZE);
     strlcat(buffer, directory_entry->d_name, SIZE);
     strlcat(buffer, "\t", SIZE);
-    strlcat(buffer, ctime(&filestat.st_ctime), SIZE);
-//    strlcat(buffer, "\n", SIZE);
+    char temp[1024];
+    ctime_r(&filestat.st_mtime, temp);
+    strlcat(buffer, temp, SIZE);
   }
   closedir(dirptr);
+  return 1;
 }
 
 void *myfunction(void *p_client_socket)
@@ -83,14 +86,28 @@ void *myfunction(void *p_client_socket)
     else if( strcmp(buffer, "ls") == 0)
     {
       bzero(buffer, SIZE);
-      show_dir_content(ptr->client_path, buffer);
+      response = show_dir_content(ptr->client_path, buffer);
+      if(response == 0)
+      {
+        break;
+      }
     }
     else if( strncmp(buffer, "cd", 2) == 0)
     {
-      bzero(ptr->client_path, SIZE);
-      strlcpy(ptr->client_path, buffer+3, SIZE);
-      bzero(buffer, SIZE);
-      strlcpy(buffer, "Directory changed successfully", SIZE);
+      DIR *dirptr = opendir(buffer+3);
+      if(dirptr == NULL)
+      {
+        bzero(buffer, SIZE);
+        strlcpy(buffer, "Directory does not exist.", SIZE);
+      }
+      else
+      {
+        closedir(dirptr);
+        bzero(ptr->client_path, SIZE);
+        strlcpy(ptr->client_path, buffer+3, SIZE);
+        bzero(buffer, SIZE);
+        strlcpy(buffer, "Directory changed successfully", SIZE);
+      }
     }
     else
     {
@@ -105,6 +122,12 @@ void *myfunction(void *p_client_socket)
     }
     bzero(buffer, SIZE);
   }
+  bzero(buffer, SIZE);
+  strlcpy(buffer, "bye", SIZE);
+  response = send(ptr->new_socketfd, buffer, SIZE, 0);
+  if (response < 0)
+    perror("Unable to send message\n");
+  free(ptr);
   free(buffer);
   close(ptr->new_socketfd);
   pthread_exit(NULL);
@@ -113,38 +136,24 @@ void *myfunction(void *p_client_socket)
 
 int main()
 {
-  int socketfd, opt = 1, i = 0, temp;
+  int socketfd, opt = 1, i = 0;
   struct sockaddr_in address;
   socklen_t address_length;
   pthread_t *mythread[MAX];
-  char *name, *ser_name, *hostname;
+  char *buffer;
   
-  name = (char *)malloc(SIZE);
-  if(name == NULL)
+  buffer = (char *)malloc(SIZE);
+  if(buffer == NULL)
   {
-    perror("Unable to allocate a memory.\n");
-    exit(0);
-  }
-  ser_name = (char *)malloc(SIZE);
-  if(ser_name == NULL)
-  {
-    perror("Unable to allocate a memory.\n");
-    exit(0);
-  }
-  hostname = (char *)malloc(SIZE);
-  if(hostname == NULL)
-  {
-    perror("Unable to allocate a memory.\n");
-    exit(0);
-  }
-  strlcat(ser_name, "/home/", SIZE);
-  if( (temp = getlogin_r(name, SIZE)) != 0 )
-  {
-  	perror("Unable to fetch username \n");
+  	perror("Unable to allocate memory.");
   	exit(EXIT_FAILURE);
   }
-  strlcat(ser_name, name, SIZE);
-  strlcat(ser_name, "/", SIZE);
+  if(getcwd(buffer, SIZE) == NULL)
+  {
+    perror("Unable to fetch current Directory\n");
+    free(buffer);
+    exit(EXIT_FAILURE);
+  }
   // Creating socket file descriptor	socketfd = socket(domain, type, IP)
   if ((socketfd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
   {
@@ -170,7 +179,7 @@ int main()
     exit(EXIT_FAILURE);
   }
   // Wait for the client for connection
-  if (listen(socketfd, 100) < 0)
+  if (listen(socketfd, MAX) < 0)
   {
     perror("Unable to listen\n");
     close(socketfd);
@@ -178,7 +187,6 @@ int main()
   }
   while(1)
   {
-    bzero(name, SIZE);
     NODE *ptr = (NODE *)malloc(sizeof(NODE));
     address_length = sizeof(ptr->client_address);
     // Accept first connection request from the queue and create a new connection socket fd
@@ -188,19 +196,7 @@ int main()
       close(socketfd);
       exit(EXIT_FAILURE);
     }
-    if(getnameinfo((struct sockaddr *)&ptr->client_address, sizeof(ptr->client_address), hostname, SIZE, NULL,0,0) < 0)
-    {
-      perror("Unable to get hostname");
-      strlcpy(name, ser_name, SIZE);
-      strlcat(name, "localhost", SIZE);
-    }
-    else
-    {
-      strlcpy(name, ser_name, SIZE);
-      strlcat(name, hostname, SIZE);
-    }
-    ptr->client_path = (char *)malloc(SIZE);
-    strlcpy(ptr->client_path, name, SIZE);
+    strlcpy(ptr->client_path, buffer, SIZE);
     pthread_t tid[i];
     mythread[i] = &tid[i];
     if( (pthread_create(mythread[i++], NULL, myfunction, (void *)ptr)) != 0)
@@ -208,7 +204,6 @@ int main()
       perror("Unable to create thread \n");
       break;
     }
-    bzero(hostname, SIZE);
   }
   pthread_exit(NULL);
   close(socketfd);
