@@ -141,19 +141,7 @@ int main()
   socklen_t address_length;
   pthread_t *mythread[MAX];
   char *buffer;
-  
-  buffer = (char *)malloc(SIZE);
-  if(buffer == NULL)
-  {
-  	perror("Unable to allocate memory.");
-  	exit(EXIT_FAILURE);
-  }
-  if(getcwd(buffer, SIZE) == NULL)
-  {
-    perror("Unable to fetch current Directory\n");
-    free(buffer);
-    exit(EXIT_FAILURE);
-  }
+
   // Creating socket file descriptor	socketfd = socket(domain, type, IP)
   if ((socketfd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
   {
@@ -185,6 +173,19 @@ int main()
     close(socketfd);
     exit(EXIT_FAILURE);
   }
+  buffer = (char *)malloc(SIZE);
+  if(buffer == NULL)
+  {
+  	perror("Unable to allocate memory.");
+  	exit(EXIT_FAILURE);
+  }
+  if(getcwd(buffer, SIZE) == NULL)
+  {
+    perror("Unable to fetch current Directory\n");
+    free(buffer);
+    close(socketfd);
+    exit(EXIT_FAILURE);
+  }
   while(1)
   {
     NODE *ptr = (NODE *)malloc(sizeof(NODE));
@@ -193,6 +194,7 @@ int main()
     if((ptr->new_socketfd = accept(socketfd, (struct sockaddr *)&ptr->client_address, (socklen_t*)&address_length))< 0)
     {
       perror("Unable to accept connection request\n");
+      free(buffer);
       close(socketfd);
       exit(EXIT_FAILURE);
     }
@@ -205,6 +207,7 @@ int main()
       break;
     }
   }
+  free(buffer);
   pthread_exit(NULL);
   close(socketfd);
   return 0;
