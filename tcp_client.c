@@ -67,6 +67,10 @@ int main()
       perror("Unable to receive message\n");
       break;
     }
+    if( strcmp(buffer, "bye") == 0)
+    {
+      break;
+    }
     printf("\n From server: %s \n", buffer);
     bzero(buffer, SIZE);
   }
