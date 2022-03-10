@@ -57,10 +57,6 @@ int main()
       perror("Unable to send message\n");
       break;
     }
-    if( strcmp(buffer, "bye") == 0)
-    {
-      break;
-    }
     response = read(socketfd, buffer, SIZE);
     if (response < 0)
     {

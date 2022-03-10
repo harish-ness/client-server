@@ -40,7 +40,7 @@ int show_dir_content(char *path, char *buffer)
   while ((directory_entry = readdir(dirptr)) != NULL)
   {
     struct stat filestat;
-    stat(directory_entry->d_name, &filestat);
+    stat((const char *)directory_entry->d_name, &filestat);
     strlcat(buffer, get_file_type(directory_entry->d_type), SIZE);
     strlcat(buffer, "\t", SIZE);
     strlcat(buffer, directory_entry->d_name, SIZE);
@@ -177,6 +177,7 @@ int main()
   if(buffer == NULL)
   {
   	perror("Unable to allocate memory.");
+  	close(socketfd);
   	exit(EXIT_FAILURE);
   }
   if(getcwd(buffer, SIZE) == NULL)
@@ -191,7 +192,7 @@ int main()
     NODE *ptr = (NODE *)malloc(sizeof(NODE));
     address_length = sizeof(ptr->client_address);
     // Accept first connection request from the queue and create a new connection socket fd
-    if((ptr->new_socketfd = accept(socketfd, (struct sockaddr *)&ptr->client_address, (socklen_t*)&address_length))< 0)
+    if((ptr->new_socketfd = accept(socketfd, (struct sockaddr *)&ptr->client_address, (socklen_t*)&address_length)) < 0)
     {
       perror("Unable to accept connection request\n");
       free(buffer);
@@ -204,6 +205,8 @@ int main()
     if( (pthread_create(mythread[i++], NULL, myfunction, (void *)ptr)) != 0)
     {
       perror("Unable to create thread \n");
+      close(ptr->new_socketfd);
+      free(ptr);
       break;
     }
   }
